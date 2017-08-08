@@ -10,8 +10,8 @@ Attribute VB_Exposed = True
 
 Sub Search()
 
-    Dim xDOC As DOMDocument60
-    Dim XMLHttpRequest As XMLHTTP60
+    Dim xDOC As DOMDocument
+    Dim XMLHttpRequest As XMLHTTP
     Dim XMLElement As IXMLDOMElement
     Dim response As String
     Dim URL As String
@@ -377,28 +377,29 @@ fiush:
         'Sets person ID and name
         If nocrew = False Then
             
-            For Each Item In js.Item("casts").Item("crew")
+            j = 1
             
-                If Item("job") = "Director" Then
+            Do Until Trim(js.Item("casts").Item("crew")(j).Item("job")) = "Director"
+
+                j = j + 1
                 
-                    pid = Trim(Item("id"))
-                    pname = Trim(Item("name"))
+            Loop
             
-                End If
-            Next
+            pid = Trim(js.Item("casts").Item("crew")(j).Item("id"))
+            pname = Trim(js.Item("casts").Item("crew")(j).Item("name"))
             
-'            pid = Trim(js.Item("casts").Item("crew")(1).Item("id"))
-'            pname = Trim(js.Item("casts").Item("crew")(1).Item("name"))
-
+            j = j + 1
+            
             'Gets the second director, if present
-            On Error Resume Next
-            If Trim(js.Item("casts").Item("crew")(2).Item("job")) = "Director" Then
+            On Error GoTo nope
+            If Trim(js.Item("casts").Item("crew")(j).Item("job")) = "Director" Then
 
-                pid2 = Trim(js.Item("casts").Item("crew")(2).Item("id"))
-                pname2 = Trim(js.Item("casts").Item("crew")(2).Item("name"))
+                pid2 = Trim(js.Item("casts").Item("crew")(j).Item("id"))
+                pname2 = Trim(js.Item("casts").Item("crew")(j).Item("name"))
 
             End If
 
+nope:
             'Director
             Form!Txt_Director.Value = "[*Director:*]  <a href=" & """"
             get_Person_Info (pid)
@@ -812,20 +813,23 @@ Sub PersonDeets()
 
                 JData = GetWebSource(URL)
 
-                If Right(JData, 17) = "total_results"":0}" Then
+                If InStr(1, JData, "total_results"":0") > 0 Then '   Right(JData, 17) = "total_results"":0}" Then
                     MsgBox ("Nothing Found for ") & NameHold
                     GoTo skip
                 End If
 
                 'Removes the } from the string to be able to count the result number
-                JData = Left(JData, Len(JData) - 17)
+                'JData = Left(JData, Len(JData) - 17)
 
-                If Right(JData, 1) > 1 Then
-
+                'If Right(JData, 1) > 1 Then
+                If Mid(JData, 27, 1) > 1 Then
+                
                     Set js = JSON.parse(JData)
 
-                    Resultnum = Right(JData, 1)
-
+                    'Resultnum = Right(JData, 1)
+                    
+                    Resultnum = Mid(JData, 27, 1)
+                    
                     personnum = 1
 
 
@@ -1015,32 +1019,32 @@ skip:
     Else
     End If
 
-
-    'Poster
-    PosterURL = get_TMDB_Poster(Form.Txt_Search.Value)
-
-    If PosterURL <> "" Then
-
-        Form.WebBrowser1.Left = -Form.WebBrowser1.Width
-
-        Form.WebBrowser1.Visible = True
-
-        Form.WebBrowser1.Navigate PosterURL
-
-        PauseTime = 30        ' Set duration to wait in seconds.
-        Start = Timer        ' Set start time.
-
-        Do        ' While Timer < Start + PauseTime
-            DoEvents        ' allow other processes to work (the browser to have time to load the webpage)
-        Loop Until Form.WebBrowser1.readyState = READYSTATE_COMPLETE Or Timer > Start + PauseTime
-
-        Form.WebBrowser1.Document.body.Scroll = "no"
-        Form.WebBrowser1.Document.body.Style.Border = "none"
-
-        Form.WebBrowser1.Left = 204
-
+    If Form.Txt_Search.Value <> "" Then
+        'Poster
+        PosterURL = get_TMDB_Poster(Form.Txt_Search.Value)
+    
+        If PosterURL <> "" Then
+    
+            Form.WebBrowser1.Left = -Form.WebBrowser1.Width
+    
+            Form.WebBrowser1.Visible = True
+    
+            Form.WebBrowser1.Navigate PosterURL
+    
+            PauseTime = 30        ' Set duration to wait in seconds.
+            Start = Timer        ' Set start time.
+    
+            Do        ' While Timer < Start + PauseTime
+                DoEvents        ' allow other processes to work (the browser to have time to load the webpage)
+            Loop Until Form.WebBrowser1.readyState = READYSTATE_COMPLETE Or Timer > Start + PauseTime
+    
+            Form.WebBrowser1.Document.body.Scroll = "no"
+            Form.WebBrowser1.Document.body.Style.Border = "none"
+    
+            Form.WebBrowser1.Left = 204
+    
+        End If
     End If
-
 Fin:
 
     'Resets back to use TMDB
